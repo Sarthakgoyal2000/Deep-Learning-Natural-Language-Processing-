@@ -1,0 +1,199 @@
+##########NLTK python library comes preloaded with loads of corpora which one can use to quickly perform text preprocessing steps.
+############We will be using one such corpus called Reuters corpus.
+
+import nltk
+from nltk.corpus import reuters
+
+
+####Let's See The File Id's in the Corpus:
+import nltk
+nltk.download('reuters')
+reuters.fileids() # List file-ids in the corpus
+
+
+
+#######Let's See What Are The Categories In the Given corpus:
+reuters.categories() # List news categories in the corpus
+
+
+
+#####Let's see the list of strings in the given corpus & print the length of the same
+# Returns a list of strings
+print(reuters.words())
+length= len(reuters.words())
+print("Lenght of the corpus ", length)
+
+
+
+#Viewing a particular new category:
+reuters.fileids(['wheat','rice']) # List file ids with either wheat or rice categories
+# Some file ids may overlap as news covers multiple categories
+
+
+
+##Let’s see the sentences in the given corpus:
+nltk.download('punkt')
+  
+reuters.sents()
+
+
+
+##We can access a specific file with the given fileids argument.
+reuters.sents(fileids='test/15500')
+
+
+
+#Let' see how many categories does Reuters corpus hold:
+len(reuters.fileids()) # 500 sources, each file is a source.
+
+
+#Let see the raw content of the Reuters based on particular file-id:
+rawtext= reuters.raw('test/15500').strip()[:1000]
+print(rawtext) # First 1000 characters.
+
+
+
+##Here you can see that some sentences are having a slash. There is a mix of lowercase and Uppercase words. Some words are having parenthesis around the numbers.
+##Let's See How Tokenization Works
+#Sentence Tokenization
+#In NLTK, sent_tokenize() the default tokenizer function that you can use to split strings into "sentences".
+from nltk import sent_tokenize, word_tokenize
+sent_tokenize(rawtext)
+
+
+
+#Word tokenization:
+##It is the process of splitting up “sentences” into “words”. Now that we have tokenized the raw text into sentences we can create the word token using word_tokenize.
+for sent in sent_tokenize(rawtext):
+    print(word_tokenize(sent))
+
+
+
+#Lowercasing :
+##As we can see there are some words in uppercase. Let's treat them to make all of them lowercased.
+for sent in sent_tokenize(rawtext):
+    # It's a little in efficient to loop through each word,
+    # after but sometimes it helps to get better tokens.
+    print([word.lower() for word in word_tokenize(sent)])
+
+
+
+###Woohoo! All the uppercase words have been lowercased now.
+##Removing Stop Words:
+##NLTK comes with a rich set of stopwords with its corpus. we will use it to treat stopwords in our raw text
+nltk.download('stopwords')
+
+from nltk.corpus import stopwords
+
+stopwords_en = stopwords.words('english')
+print(stopwords_en)
+
+
+
+EN_Stopwords = set(stopwords.words('english')) # Set checking is faster in Python than list.
+
+# Tokenize and lowercase
+tokenized_lowercase = list(map(str.lower, word_tokenize(rawtext)))
+
+stopwords_english = set(stopwords.words('english')) # Set checking is faster in Python than list.
+
+# List comprehension.
+print([word for word in tokenized_lowercase if word not in stopwords_en])
+
+
+
+##As you can see the output, we got rid of some of the stopwords like ‘and’, ‘of’, ‘as’, ‘in’ etc after stop word removal using NLTK library.
+##Treating Punctuations:
+##We will perform both punctuations and stop word preprocessing together in the below code snippet
+#define punchuation
+from string import punctuation
+
+# It's a string so we have to them into a set type
+print('From string.punctuation:', type(punctuation), punctuation)
+
+punct_stopwords = stopwords_english.union(set(punctuation))
+print(punct_stopwords)
+#Removing punctuations from the tokenized lowercase string we processed earlier:
+punch_stop_word= [word for word in tokenized_lowercase if word not in punct_stopwords]
+
+print(punch_stop_word)
+
+
+
+##Stemming & Lemmatization:
+#NLTK comes with some common stemming & lemmatizing library inbuilt, like :
+#Porter Stemmer from Porter (1980):
+#Wordnet Lemmatizer (port of the Morphy: https://wordnet.princeton.edu/man/morphy.7WN.html)
+#Let's start with Porter's Stemming One:
+#Let's take a few simple examples to understand how powerful Porter's stemmer algorithm is:
+from nltk.stem import PorterStemmer
+
+porter = PorterStemmer()
+
+for word in ['Talking', 'Talks', 'Talked']:
+    print(porter.stem(word))
+
+
+
+##Quick Comment:
+##As you can see when we passed few words like {Talking, Talks, Talked }, porter algorithm, converted them all to talk by stemming them to their root, removing 'ing', 's', 'ed' from the given words.
+#Lemmatization:
+#Let's use the same set of example string we used in stemming. Here we will download WordNetLemmatizer package to perform Lemmatization preprocessing
+import nltk
+nltk.download('wordnet')
+
+from nltk.stem import WordNetLemmatizer
+
+wnl = WordNetLemmatizer()
+
+for word in ['Talking', 'Talks', 'Talked']:
+    print(wnl.lemmatize(word))
+    ##[nltk_data] Downloading package wordnet to
+#[nltk_data]     /Users/prammobibt/nltk_data...
+#[nltk_data]   Unzipping corpora/wordnet.zip.
+
+
+##Quick Observation:
+#Here you can see that it returned the same set of string Talking, Talks, Talked as an output. It is important here to understand that Lemmatization here will not work properly until Part Of Speech tagging is done on the given set of words.
+#Lemmatizer needs POS tagging to function properly.
+#POS Tagging :
+#pos_tag takes the tokenized sentence as input, i.e. list of string and returns a tuple of (word, tg), i.e. a list of tuples of strings
+nltk.download('averaged_perceptron_tagger')
+from nltk import pos_tag
+
+
+wnl = WordNetLemmatizer()
+
+def penn2morphy(penntag):
+    """ Converts Penn Treebank tags to WordNet. """
+    morphy_tag = {'NN':'n', 'JJ':'a',
+                  'VB':'v', 'RB':'r'}
+    try:
+        return morphy_tag[penntag[:2]]
+    except:
+        return 'n' # if mapping isn't found, fall back to Noun.
+    
+pos_tagged_sent = pos_tag(word_tokenize('Prisha is learning maths online'))
+print(pos_tagged_sent)
+
+
+
+#Now that we have implemented POS tagging let's see how WordNetLemmatizer lemmatizes the same sentence which was POS tagged above
+def lemmatize_sent(text): 
+    # Text input is string, returns lowercased strings.
+    return[wnl.lemmatize(word.lower(), pos=penn2morphy(tag)) 
+            for word, tag in pos_tag(word_tokenize(text))]
+
+lemmatize_sent('Prisha is learning maths online')
+
+
+#Let's see how our defined lemmatize_sent function works on our raw text
+##We will combine lemmatization and stop words removal both in the below-given code
+print('Raw Text Before Lemmatization ')
+print(rawtext, '\n')
+print('Raw Text After Stop word Removal & Lemmaztization \n')
+print([word for word in lemmatize_sent(rawtext) 
+       if word not in stopwords_english
+       and not word.isdigit() ])
+
+
